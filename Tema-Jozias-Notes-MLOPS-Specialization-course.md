@@ -149,5 +149,23 @@ Back Arrow →  “+Enable API and Services” → Search Bar → Cloud Run Admi
 Back Arrow →  “+Enable API and Services” → Search Bar → Google Container Registry API --> Enable if disabled
 Back Arrow →  “+Enable API and Services” → Search Bar → Artifact Registry API --> Enable if disabled
 
-Home --> Search Bar --> Cloud Run --> Create Service --> 
+Home --> Search Bar --> Cloud Run --> Create Service --> A service exposes a unique endpoint and automatically scales the underlying infrastructure to handle incoming requests. Service name and region cannot be changed later. (Continuously deploy from a repository (source or function)) --> Set up with Cloud Build --> Authenticate (your GitHub) --> Continue --> Authorize Cloud Build --> Install Goolgle Cloud Build --> All repositories(/Only select repositories) --> Install --> Confirm --> Repository(gcp-cicd) --> Check the checkbox(I understand...) --> Next --> Build Configuration --> Branch(master) --> Build file(Go, Node.js, Python, Java, .NET, ...) --> Save --> Authentication --> check the checkbox --> check(Allow unauthenticated invocations) to allow people from the internet to access the web app --> CPU allocation and pricing(CPU is only allocated during request processing) --> Service scaling(0) --> Ingress control(All) --> review the rest and -->  Create 
+
+Enter the created service --> Copy the endpoint URL --> open it in a new window to acces your static web app
+
+Make changes and push them to se the pipeline running, to see the history of builds
+Search Bar --> Cloud Build
+
+You can create new triggres if you want or edit present ones.
+Cloud Build --> Triggers  --> Chose the default created trigger --> Approval(check the checkbox to create a manual approval process) --> Save
+
+Cloud Build --> Dashboard --> 
+
+To see your Artifact
+Search Bar --> Artifact registry
+
+To rollback changes, Select a build from build history --> Rebuild
+
+Now you delete ressources
+Search Bar --> Manage ressources --> heck the project you created (chatappgcp-cicd) --> Delete --> opy the project id and paste --> Shut down anyway --> Ok
 
