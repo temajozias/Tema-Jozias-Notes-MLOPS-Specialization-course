@@ -146,5 +146,8 @@ Create a project → Project name(chatappgcp-cicd) → Create → Select Project
 Now we must enable API and services we will use
 Search Bar → “Enable API and Services” →  → Search Bar → Cloud Build API → Enable → 
 Back Arrow →  “+Enable API and Services” → Search Bar → Cloud Run Admin API → Enable → 
-Back Arrow →  “+Enable API and Services” → Search Bar → Google Container Registry API
+Back Arrow →  “+Enable API and Services” → Search Bar → Google Container Registry API --> Enable if disabled
+Back Arrow →  “+Enable API and Services” → Search Bar → Artifact Registry API --> Enable if disabled
+
+Home --> Search Bar --> Cloud Run --> Create Service --> 
 
