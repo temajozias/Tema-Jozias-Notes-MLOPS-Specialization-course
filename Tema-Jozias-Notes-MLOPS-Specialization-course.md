@@ -112,7 +112,7 @@ Renaming a Pipeline
 Pipelines → Menu of the Pipeline you added → Rename/Move (give a new name) → “Build and Deploy” → Save
 
 How to use Boards with Pipelines
-Project Summary → Boards Panel → Boards → To Do → New Item (Update title of the App) → Assign the task to yourself or a team member → Move the task to “Doing” stage → Click on the task title to open task details, description and discussion panel with tema members → copy the number assigned to the task #<Board Number> like #2 → Edit your local repo and push the changes with the commit in a different form like “fixed AB#<Board Number>” like “fixed AB#2” and push to the remote → The task will move from Doing to Done.
+Project Summary → Boards Panel → Boards → To Do → New Item (Update title of the App) → Assign the task to yourself or a team member → Move the task to “Doing” stage → Click on the task title to open task details, description and discussion panel with tema members → copy the number assigned to the task #[Board Number] like #2 → Edit your local repo and push the changes with the commit in a different form like “fixed AB#[Board Number]” like “fixed AB#2” and push to the remote → The task will move from Doing to Done.
 
 To create another Pipeline we need to disable the current one, this is to prevent both pipelines to run when the dev push changes to the remote.
 Go Back to Pipelines → enter the current Pipeline → 3 dots at top corner right → Settings → Toogle “Disabled” → Save
@@ -169,3 +169,182 @@ To rollback changes, Select a build from build history --> Rebuild
 Now you delete ressources
 Search Bar --> Manage ressources --> heck the project you created (chatappgcp-cicd) --> Delete --> opy the project id and paste --> Shut down anyway --> Ok
 
+### Module 5- Docker & Kubernetes Overview (Docker )
+#### Docker Overview
+Open  a CMD
+grab the docker version
+docker --version
+
+for detailled response about the version
+docker version
+
+list all docker images
+docker images
+
+build a image, you must be in the parent folder where there is a file named "Dockerfile"
+docker build -t [app-name]:[tag-name] [docker-file-location]
+docker build -t node-app:v1.0  .  # Because the Docker file is in the parent directory
+
+to run your dockerised app
+docker run -it -p 5000:8080 [app-name]:[tag-name]
+docker run -it -p 5000:8080 node-app:v1.0 
+
+run in detach mode, remember to copy the container ID, so you can easily terminate the container
+docker run -it -d -p 5000:8080 [app-name]:[tag-name]
+docker run -it -d -p 5000:8080 node-app:v1.0 
+
+stop the container in detach mode
+docker stop [container-id]
+docker stop 34ead35ede7fc5e9d2008de2b84830215b81d864a35f0344b4cd5cde7939edac
+
+when you have a container ID, you can directly run it 
+docker start [container-id]
+docker start 34ead35ede7fc5e9d2008de2b84830215b81d864a35f0344b4cd5cde7939edac
+
+If the container is crashing, try restart it
+docker restart [container-id]
+docker restart 34ead35ede7fc5e9d2008de2b84830215b81d864a35f0344b4cd5cde7939edac
+
+to list all the containers that are running
+docker ps
+
+to list all the containers
+docker ps -a
+
+remove a container, make sur it is stopped beforehand
+docker rm [container-id]
+docker rm 34ead35ede7fc5e9d2008de2b84830215b81d864a35f0344b4cd5cde7939edac
+
+
+
+to get logs from a particular container 
+docker logs [container-id]
+docker logs 61e119287c1b911599ca6050b7902843d68d9d07d611b2e127b97b6ed7f9f708
+
+to get the real time logs
+docker logs -f [container-id]
+docker logs -f 61e119287c1b911599ca6050b7902843d68d9d07d611b2e127b97b6ed7f9f708
+
+to create multiple differents versions of your docker images, you must create multiple different tags for each and every version of the docker image, considering you have made some changes in your app and you want to create a new version of it. Or you can create multiple images with different tags for different teams to work on, in this case the image id will remain same, assuming you have not made any changes
+docker image tag [old-image-name]:[tag-name] [new/old-image-name]:[tag-name]
+docker image tag node-app:v1.0 node-app:v1.1
+
+then you can show all images
+docker images
+
+docker registries are tools that we use to version your docker images DockerHub, Nginx, ...
+
+whenever you are making changes to your app, you must build it again, this time with a different tag to track the version
+docker build -t [app-name]:[new-tag-name] [docker-file-location]
+docker build -t node-app:v2.0  .
+
+you can use ci/cd tools on aws, azure, gcp, github actions to automatically build your docker images
+
+to pull your image to dockerHub you must add your username before the image, to do so, you create a copy using tags
+docker image tag [old-image-name]:[tag-name] [new/old-image-name]:[tag-name]
+docker image tag node-app:v1.0 temajozias/node-app:v1.0
+
+to push the image to the DockerHub, you first need to authenticate
+docker login
+
+to push an image
+docker push [username]/[image-name]:[tag-name]
+docker push temajozias/node-app:v1.0
+
+Your image yould be showing in your DockerHub account under the Repositories section
+
+choose a name of a docker container instead of a random name
+docker run -it -d --name [your-container-name] -p 5000:8080 [app-name]:[tag-name]
+docker run -it -d --name webapp -p 5000:8080 temajozias/node-app:v1.0 
+
+every container has a linux environment inside, to run a linux terminal inside a container, you should make sure first that the container is up and running
+docker exec -it [container-id] /bin/bash
+docker exec -it cf94a1f045fb /bin/bash
+
+to exit the container terminal
+exit
+
+#### Docker Network Types
+
+List all the networks
+docker network ls
+
+Create your own network
+docker network create [network-name]
+docker network create node-network
+
+to verify, you can list all networks
+docker network ls
+
+To check if any container is attached/connected to the created network
+docker inspect [network-name]
+docker inspect node-network
+
+Now we need to connect/attach the network to the container
+docker network connect [network-name] [container-id]
+docker network connect node-network cf94a1f045fbb1fec94ff3cd79d812a6273404d5c7794a3ab22787efe8fc3908
+
+Now you can inspect the network again to see the newly attached container
+docker inspect [network-name]
+docker inspect node-network
+
+To remove a network
+docker network rm [network-name]
+docker network rm node-network
+
+To disconnect a container from a network
+docker network disconnect [network-name] [container-id]
+docker network disconnect node-network cf94a1f045fbb1fec94ff3cd79d812a6273404d5c7794a3ab22787efe8fc3908
+
+Now you can inspect the network again to acknowledge
+docker inspect [network-name]
+docker inspect node-network
+
+#### Docker Volumes
+To list volumes
+docker volume ls
+
+#### Docker Compose
+Docker compose is a tool used for defining and running multi-container Docker applications
+
+Hands-on on Placement-rank app
+
+first build the app
+docker build -t placement-rank-app:v1.0  .
+
+now you run the app
+docker run -it -d -p 9696:9696 placement-rank-app:v1.0
+
+new tag to push to dockerhub
+docker image tag placement-rank-app:v1.0 temajozias/placement-rank-app:v1.0
+
+now you push to dockerhub
+docker push temajozias/placement-rank-app:v1.0
+
+to reduce the size of your container, you can chose a suitable base image, slim or lightweight versions prefered.
+
+Docker Compose
+To start running your Docker compose
+docker-compose up
+
+To run your project in detached mode
+docker-compose up -d
+
+list all the running containers on docker compose
+docker-compose ps 
+
+restart all the running containers on docker compose
+docker-compose restart 
+
+get logs for all the running containers on docker compose
+docker-compose logs 
+
+stop docker compose
+docker-compose stop
+
+#### Docker Swarm
+Docker Swarm is a tool for managing a group of Docker containers accross multiple servers as a single system.
+
+### Module 5- Docker & Kubernetes Overview (Kubernetes)
+
+Kubernetes is an open source platform for automating deployment, scaling, and management of containerized applications
