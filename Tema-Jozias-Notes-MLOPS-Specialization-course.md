@@ -348,3 +348,359 @@ Docker Swarm is a tool for managing a group of Docker containers accross multipl
 ### Module 5- Docker & Kubernetes Overview (Kubernetes)
 
 Kubernetes is an open source platform for automating deployment, scaling, and management of containerized applications
+
+to start Minikube 
+minikube start
+
+to get the status of the minikube
+minikube status
+
+Kubernetes
+
+get all information and configuration on all clusters running or not
+kubectl get all
+
+get all information on nodes
+kubectl get nodes
+
+get all information on pods
+kubectl get pods
+
+get all information on services
+kubectl get services
+
+a namespace is a logical partition you can able to create in a cluster, as a project in google cloud.
+
+
+create a deployment based on a deployment.yaml file
+kubectl create --filename [path-yaml-script]
+kubectl create -f [path-yaml-script]
+kubectl create -f deployment.yaml
+
+now we check the status
+kubectl get all
+
+create a service based on a service.yaml file
+kubectl create --filename [path-yaml-script]
+kubectl create -f [path-yaml-script]
+kubectl create -f service.yaml
+
+now we check the status
+kubectl get all
+
+
+to describe and get detailled information about a service
+kubectl describe services [service-name]
+kubectl describe services recruitment-rank-app
+
+to describe and get detailled information about a deployment
+kubectl describe deployment [deployment-name]
+kubectl describe deployment recruitment-rank-app
+
+To interact with a minikube cluster we need to create a tunnel
+to access our application through a web browser we need to enable a tunnel
+
+minikube service [service-name]
+minikube service recruitment-rank-app
+
+Now you run the web app and open the web app in a new browser window
+
+get a pod name, just copy it from the command below
+kubectl get pods
+
+extract logs from a specific pod
+kubectl logs [pod-name]
+
+to get the names of all deployments in order to copy names before delete them
+kubectl get deployments
+kubectl get services
+
+delete deployments and services you created
+kubectl delete deployment [deployment-name]
+
+kubectl delete service [service-name]
+kubectl delete svc [service-name]
+
+#### Deploying an ML Model using Docker and Amazon EKS
+Loggin into aws
+Search Bar --> Elastic Kubernetes Service --> Create cluster --> Cluster configuration --> Name(you provide a name) --> Kubernetes version(pick the most suitable for you) --> Cluster IAM role(Create recommended role) --> Node IAM role(Create recommended role) --> VPC(Create VPC) --> Create
+
+You can also create using AWS CLI, it is suitable to work on production than UI
+
+first we should authenticate our cli to connect to our aws account
+Search Bar --> IAM --> (Left side navigation panel) Access management --> Users --> Create User --> User name(You provide a name(eks-user)) --> Do not check the check box --> Next --> Set permissions --> Permissions options(Add user to group) --> User Groups --> Create group --> User group name(eks-user-group) --> Permissions policies(AdministratorAccess) --> Create user group --> User groups(eks-user-group) --> Next --> Review and create --> Create user --> Select the user you created --> Security credentials --> Access Keys --> Create access key --> Use case(Command Line Interface) --> Confirmation (check the checkbox) --> Next --> Description tag value(add a description) --> Create access key(you download or copy the key and the secret) --> Done
+
+Now we configure this access key to our PC
+Command Prompt --> aws configure
+AWS Access Key ID [None]: ********FT72
+AWS Secret Access Key [None]: **************SFPL
+Default region name [None]: us-east-1
+Default output format [None]: json
+
+Now we should install another cli to interact with eks. "eksctl"
+
+Windows PowerShell(Administrator Mode)--> choco install -y eksctl
+if error you should install chocolatey in administrator powershell with this command
+
+Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+
+check the eksctl version
+eksctl version
+
+To create a cluster on top of aws using eksctl
+eksctl create cluster --name test-cluster --version 1.31 --region us-east-1 --zones=us-east-1a,us-east-1b,us-east-1c,us-east-1d --nodegroup-name linux-nodes --node-type t2.micro --nodes 2
+
+we will be installing this in kubernetes
+https://github.com/temajozias/aws-eks.git
+
+launch docker and minikube
+
+get all available informations
+kubectl get all
+
+to deploy the flask version 1 app, open a coman prompt in the version 1 directory
+kubectl create -f placement-flask-deployment.yaml
+kubectl create -f placement-flask-service.yaml
+
+check 
+kubectl get all
+
+now we create a tunnel to interact with the app
+minikube service flask-app-service
+
+the application runs and open into a web browser
+input the container port for the model 80 and hit predict
+
+list all services
+minikube service list
+
+kubectl config set-context --current --namespace=default
+
+list all
+kubectl get all
+
+kubectl will not work if you turn off your docker desktop, so, if you quit your docker desktop, and you run 'kubectl get all' and there is no errors, it means that your kubernetes are running on cloud.
+
+move to this folder
+"MLOPS Specialization Course\Materials\mlops-k8s-project-placement-rank\mlops-k8s-project-placement\AWS EKS"
+
+kubectl create -f app-deployment.yaml
+kubectl create -f loadbalancer.yaml
+
+then 
+kubectl get all
+
+copy the domain name to your notepad
+
+move to this folder
+"MLOPS Specialization Course\Materials\mlops-k8s-project-placement-rank\mlops-k8s-project-placement\AWS EKS web-app"
+
+edit the web-predict-app.py file and paste the domain url you just copied in the url variable and save it
+
+open a terminal in the current folder
+python web-predict-app.py
+
+so your app is running locally but your model is running on aws
+you set the port to 80 and test your app if the prediction works
+
+
+to delete a cluster on top of aws
+eksctl delete cluster --name [cluster-name]
+eksctl delete cluster --name test-cluster
+
+in web app v1
+launch recruitment-rank-app clusterip service
+and flask-app-service loadbalancer service
+and both deployments
+
+to know the history of deployments
+kubectl rollout history deployment [deployment-name]
+kubectl rollout history deployment flask-app
+kubectl rollout history service flask-app-service
+
+to deploy the 2nd version of the web app, get into the web app directory and open a command prompt
+kubectl apply -f [.yaml]
+
+only use "kubectl create [.yaml]" when you are trying to deploy your app for the first time
+
+to update your existing deployment you use
+kubectl apply -f [.yaml]
+kubectl apply -f placement-flask-deployment.yaml
+
+do not update the service, just and only the deployment
+
+kubectl get all
+
+now you open the tunnel to access the web app
+minikube service flask-app-service
+
+
+to rollback to the previous version
+kubectl rollout undo deployment [deployment-name]
+kubectl rollout undo deployment flask-app
+kubectl rollout undo service flask-app-service
+
+to rollback to a specific version
+kubectl rollout undo deployment [deployment-name] --to-revision=[revision-number]
+kubectl rollout undo deployment flask-app --to-revision=1
+
+to check the status of your rollout
+kubectl rollout status deployment [deployment-name] flask-app
+kubectl rollout status deployment flask-app
+
+assuming you edited the number of repicas, you update your yaml script and
+kubectl apply -f [.yaml]
+kubectl apply -f placement-flask-deployment.yaml
+
+or you can directly update the number of replicas through kubectl
+kubectl scale deployment [deployment-name] --replicas=[new-number]
+kubectl scale deployment flask-app --replicas=4
+
+you check the status
+kubectl get all
+
+
+to access minikube dashboard
+minikube dashboard
+
+### Hands on DVC
+DVC works with git
+
+pc------(aws configure)-----> aws S3
+
+we will use S3 as our cloud storage
+
+Github [Data(information)]          Storage(S3) [Data]
+data.xml.dvc                        data.xml
+
+example-get-started(local repo) ----> 2 remote repos [1. Info of your data(GitHub), 2. Storage of your data(AWS S3)]
+
+initialisation of the local repo using git and dvc
+example-get-started --> git init
+example-get-started --> dvc init
+
+git status
+
+git commit -m "Initialize DVC repo"
+
+git status
+
+now you add a file to the folder
+dvc get https://github.com/iterative/dataset-registry get-started/data.xml -o data/data.xml
+
+the data is stored locally and on aws s3 but the information of a data(data.xml.dvc) is stored in github
+
+we neeed to start versionning the data
+dvc add [filepath]
+dvc add data/data.xml
+dvc add .
+
+now you track the changes of the data using git
+git add 'data\.gitignore' 'data\data.xml.dvc'
+git add .
+
+you commit
+git commit -m "added raw data"
+
+to add a remote storage to aws s3
+data --> S3
+dvc remote add -d storage [path/uri(unique ressource identifier)(s3,blob,gdrive)]
+
+now we create a s3 bucket on aws s3
+s3://dvc-data-store-tema/dvcstore
+
+so to add the remote
+dvc remote add -d storage s3://dvc-data-store-tema/dvcstore
+
+get the status of the repo
+git status
+
+you add and commit the changes
+git add .
+git commit -m "configured remote storage"
+
+you want to push the data to s3
+pc---data.xml-->s3
+
+dvc push  --> [s3://data-store-dvc/dvcstore]
+
+dvc push will make a connection to aws through credentials already configured and push to s3
+dvc push --> AWS (Cred) --> S3
+
+Now we remove the file and the cache to test test dvc pull
+rm -f data/data.xml
+rm -rf .dvc/cache
+
+now we pull the data from the remote repo
+dvc pull
+
+now lets double the file content
+cp data/data.xml /tmp/data.xml
+cat /tmp/data.xml >> data/data.xml
+
+now you add the modified data to the staging area for dvc
+dvc add data/data.xml
+
+you can check the modifications
+git status
+git diff
+
+now you commit the changes
+git add .
+git commit -m "data got updated"
+
+now you push the new version of your data to s3
+dvc push
+
+list the modifications
+git log --oneline
+
+now to rollback to a previous version of the data
+    first you need to checkout the previous version with git to get the corresponding information about the data
+    git checkout HEAD^1 data/data.xml.dvc
+    Now you pull the data cooresponding to the version of the information you have
+    dvc pull
+now you create a repo on github to push your changes
+git remote add origin https://github.com/temajozias/dvc-store-data.git
+git branch -M main
+git push -u origin main
+
+if a user wants to download a data from a repository
+dvc get [git-repo-url] data
+dvc get https://github.com/temajozias/dvc-store-data.git data
+
+what if another user wants to work on th repository
+first he needs to have an access to your repository
+git clone https://github.com/temajozias/dvc-store-data.git
+
+to download the data since you have information about it, get inside the folder, open a terminal
+dvc pull
+
+now you edit the data and save it
+git status
+dvc status
+dvc status --json
+
+you can try to check the differencres in the data, but it is the same as dvc status
+dvc diff
+
+now you add your data changes, commit them and push
+dvc add data/data.xml
+git add .
+git commit -m "little edit to the data"
+git push origin main
+dvc push
+
+we are done with dvc
+
+s3 can also version data without dvc
+S3 --> Buckets --> Create Bucket --> Bucket name(input name) --> Create Bucket
+inside bucket --> Properties --> Bucket Versionning --> Edit --> Enable --> Save changes
+
+S3 --> Buckets --> Create Bucket --> Bucket name(input name) --> Bucket versionning(nable) --> Create Bucket
+
+now you upload anything inside the bucket
+
+you edit your uploaded file and save it without changing the name and upload it again
+
+in s3 you enter the file --> versions
