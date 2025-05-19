@@ -123,8 +123,7 @@ To rollback to a specific pipeline execution, enter the pipeline and the stage a
 
 Now you delete everything, the project on Azure DevOps and the ressource group on Azure Portal to avoid costs.
 
-
- Linting code is reviewing code
+Linting code is reviewing code
 
 
 ### Module 4- GitHub Actions DevOps CI/CD Deploying a Static Web App
@@ -704,3 +703,339 @@ now you upload anything inside the bucket
 you edit your uploaded file and save it without changing the name and upload it again
 
 in s3 you enter the file --> versions
+
+### Module 7- High-level Overview of Model Management Tools Hands-on
+login into aws --> CloudShell --> clone the repo
+git clone https://github.com/03sarath/amazon-sagemaker-mlflow-fargate.git
+cd amazon-sagemaker-mlflow-fargate/
+
+follow the readme file to deploy
+pip3 install -r requirements.txt
+
+replace account_id and aws_region with yours to deploy the Cloud Deployment Kit on top of aws
+cdk bootstrap aws://195275646384/us-east-1
+
+cdk deploy --parameters ProjectName=mlflow --require-approval never
+
+force the deletion of a secret 
+Use the AWS CLI to permanently delete the secret
+Replace your-secret-name with your Secrets Manager secret ID and your-region with your AWS Region:
+
+aws secretsmanager delete-secret --secret-id your-secret-name --force-delete-without-recovery --region your-region
+To verify that you permanently deleted the secret, run the DescribeSecret API call:
+
+aws secretsmanager describe-secret --secret-id your-secret-name --region your-region
+Note: The deletion has a short time delay.
+
+When you delete the secret, you receive the following error:
+
+An error occurred (ResourceNotFoundException) when calling the DescribeSecret operation: Secrets Manager can't find the specified secret.
+
+
+aws secretsmanager delete-secret --secret-id dbPassword --force-delete-without-recovery --region us-east-1
+
+to doublecheck
+
+aws secretsmanager describe-secret --secret-id dbPassword --region us-east-1
+
+
+Now you copy the endpoint and paste to a new tab to access the ui
+MLflow-MLFLO-p348juwhHcHt-e923a91313220257.elb.us-east-1.amazonaws.com
+MLflow-MLFLO-p348juwhHcHt-e923a91313220257.elb.us-east-1.amazonaws.com
+
+SageMaker AI --> Applications and IDEs --> Notebooks --> Create a notebook instance --> Notebook instance name(your name) --> IAM role --> Dropdown --> Create a new role --> Keep default --> Create role --> Create notebook instance --> Open Jupyter/ JupyterLab --> 
+
+Clone the repo https://github.com/03sarath/amazon-sagemaker-mlflow-fargate.git 
+
+In Jupyter create a folder named "source_dir" then upload files from the repo to the folder source_dir in jupyter
+
+copy all the remaining files on the lab folder in the parent directory
+
+Open "1_track_experiments.ipynb" --> replace the tracking uri with your own url and run the notebook
+
+You will see the experiment appearing in the mlflow server
+
+How to register a model
+Select an experiment --> Register model --> Create New Model --> Model Name (your name) --> Register
+
+How to deploy a registered model
+Open "3_deploy_model.ipynb" --> replace the tracking uri with your own url
+
+Add permissions for Amazon SageMaker to create and push docker images to Amazon ECR
+Amazon SageMaker --> Notebooks --> Name of the notebook (mlflow-notebook) --> Permissions and encryption --> click on the IAM role and open in a new window --> Permissions policies --> Add Permissions --> Create Inline Policy --> Select a service (Elastic Container Registry) --> Actions allowed --> Manual Actions --> All Elastic Container Registry actions --> Ressources --> All --> Next --> Review and Create --> Policy name (ecr-full-access-mlflow-may-25) --> reate Policy
+
+Now you can run the "setup environment" cell in the notebook
+
+Search Bar --> ECR --> Private Registry --> Repositories --> Create repository --> repository name (mlflow) --> create --> copy the URI of the repo (195275646384.dkr.ecr.us-east-1.amazonaws.com/mlflow)
+
+Notebook cell N7 --> replace the URI with your own you just copied --> run the cell
+
+Notebook cell N9 --> replace the URI with your own you just copied --> run the cell
+
+Notebook cell N11 --> replace the URI with your own you just copied --> run the cell
+
+Notebook cell N11 --> replace the URI with your own you just copied --> run the cell
+
+model URI format
+'models:/[model-group-name]/[version-number]'
+models:/boston-housing-prod/1
+
+replace the model URI in cell N12
+
+Once your endpoint is set
+Sagemaker AI --> Inference --> Endpoints
+
+Register a 2nd version of a model
+mlflow --> choose another experiment --> Register model --> choose the same model group --> Register 
+
+to deploy the 2nd version of your model, you need to register first, a 2nd version of a model. Then you change the verion number in the model uri to the second version
+
+model URI format
+'models:/[model-group-name]/[version-number]'
+models:/boston-housing-prod/2
+
+You must update the deployment instead of creating a new one
+
+
+You must delete the endpoint to avoid bills.
+
+You must delete the stacks MLflowStack and CDKToolkit
+
+in the AWS CloudShell
+aws cloudformation delete-stack --stack-name MLflowStack
+aws cloudformation delete-stack --stack-name CDKToolkit
+
+where to see the logs
+CloudWatch --> Logs --> Log groups --> search bar(sagemaker) --> Filter by event time 
+
+### Module 8- Feature Store - Feast Hands-on
+Docker Desktop --> 
+
+Feast Setup
+
+Getting started with ubuntu environment
+
+Pull the ubuntu image
+
+docker pull ubuntu:latest
+
+run ubuntu image
+
+docker run -it -p 8888:8888 ubuntu:latest
+
+inside the operating system
+
+apt-get update
+apt-get upgrade
+
+1. Install Git
+apt install git
+git --version
+
+2. Install Python & Python Env
+apt install python3 -y
+python3 --version
+
+3. Install pip
+apt install python3-pip -y
+pip3 --version
+
+4. Install Python venv
+apt install python3-venv -y
+
+5. Clone the repo
+
+
+
+
+
+
+### Module 9- AWS MLOps - SageMaker Pipelines Hands-on
+Using Amazon SageMaker Studio to build an end to end ML pipeline
+
+First we create a domain
+SageMaker AI --> Admin configurations(left side navigation panel) --> domains --> Create domain --> Set up for single user (Quick setup) --> Set Up
+
+Enter your Domain --> Domain Settings --> Authentication and permissions(scroll down) --> Copy the Default execution role
+
+Domain Default execution role
+arn:aws:iam::195275646384:role/service-role/AmazonSageMaker-ExecutionRole-20250509T224837
+
+Search Bar --> Systems manager --> Applications Tools (left side navigation panel) --> Parameter Store --> Create parameter --> Name(/sagemaker/execution/role) --> Keep defaults --> Value(Paste the excution role you copied) --> Create parameter
+
+1. Create a Sagemaker Custom Project Template
+fork the repo
+https://github.com/03sarath/mlops-cdk-github-action.git
+
+    1. Domain Ok
+    2. Systems Manager ok
+    3. OpenID Connect
+
+Create a connexion from GitHub/GitHub Action(endpoint) <---(OpenID Connect(Token))---> (endpoint)AWS 
+
+GitHub endpoint URL : https://token.actions.githubusercontent.com
+
+AWS endpoint URL : sts.amazonaws.com 
+(STS = Securrity Token Service)
+
+This is to allow GitHub Actions to create ressources on aws services
+    ---> Access
+    ---> Permissions(Create, Read, Update, Delete) aws services (SageMaker, Service Catalog, etc)
+
+    a. Configuring OpenID Connect(authentication technique from aws to a third party platform such as GitHub Action)
+        
+        We need to create a token first, then roles and assign permissions to it in aws
+        
+        Search bar --> IAM --> Access Management(Left side nav pan) --> Identity providers --> Add provider --> Provider Type(OpenId Connect) --> Provider url(GitHub endpoint URL) --> Audience(AWS endpoint URL) --> Add provider
+
+        Now we create a role and assign policies to it
+
+        IAM --> Access Management(Left side nav pan) --> Roles --> Create Role --> Trusted Entity Type(Web Identity) --> Web Identity --> Identity provider(the token we just created(token.actions.githubusercontent.com)) --> Audience(sts.amazonaws.com) --> GitHub Organisation(temajozias)(GitHub username) --> GitHub repository(mlops-cdk-github-action) --> GitHub Branch(main) --> Next --> Permissions Policies(
+            AmazonEC2ContainerRegistryFullAccess
+            AmazonS3FullAccess
+            AWSServiceCatalogAdminFullAccess
+            AWSCloudFormationFullAccess
+            IAMFullAccess
+            AmazonSageMakerFullAccess
+            AmazonSSMFullAccess) --> Next --> Name, review, and create --> Role details --> Role name(mlops-cdk-github-action-may-25) --> Create role
+
+        Enter the created role(mlops-cdk-github-action-may-25) --> Copy the role ARN
+        OpenID Role ARN
+        arn:aws:iam::195275646384:role/mlops-cdk-github-action-may-25
+
+    1. Domain Ok
+    2. Systems Manager ok
+    3. OpenID Connect ok
+
+    1st Pipeline to deploy the infrastructure on top of AWS
+    --> AWS Account ID: 195275646384
+    --> Region : us-east-1
+
+    Now we configure aws variables as GitHub secrets into the github repo
+
+    GitHub Repo(mlops-cdk-github-action-may-25) --> Settings --> Secrets and Variables --> Actions --> New repository secret --> Name(AWS_ACCOUNT_OPENID_IAM_ROLE) --> Secret(OpenID Role ARN) (arn:aws:iam::195275646384:role/mlops-cdk-github-action-may-25) --> Add secret
+
+    New repository secret --> Name(AWS_REGION) --> Secret(us-east-1) --> Add secret
+
+    New repository secret --> Name(AWS_ACCOUNT) --> Secret(195275646384) --> Add secret
+
+
+Now we make sure we have deleted the cdk toolkit to be sure there are no errors in running the pipeline
+Delete:
+1. MLFlow Stack first and CDKToolkit later
+Search Bar --> CloudFormation -->  and delete any stack
+aws cloudformation delete-stack --deletion-mode FORCE_DELETE_STACK --stack-name dev-MLOpsServiceCatalog
+2. ECR Repo
+Search Bar --> ECR -->  and delete any repo starting with 'cdk'
+3. S3
+Search Bar --> S3 -->  empty and delete any bucket starting with 'cdk'
+
+the most important folder for a mlops engineer in this repo is "seed_code" 
+the subfolder "build_app" for the Data Scientist
+the subfolder "deploy_app" for the MLOps Engineer
+
+Now we run the first Pipeline to deploy the infrastructure on top of AWS
+mlops-cdk-github-action/.github/workflows/sm_template_register_service_catalog.yml
+workflow_dispatch is a way to maually run the pipeline
+
+Manually run the pipeline
+GitHub repo(mlops-cdk-github-action) --> Actions --> Sagemaker Project Template Register in Service Catalog --> Run Workflow --> Branch: main --> Log Level(warning) --> Run Workflow
+
+Go to Service atalog for confirmation
+Search Bar --> Service  Catalog --> Administration --> Portfolios --> Local Portfolios (SageMaker Organization Templates) (there is an organisation portfolio comming from your GitHub repo) --> Products(first product comming from the first run) (MLOps with GitHub Action template for real-time deployment)
+
+
+Now head to Sagemaker
+Search Bar --> SageMaker AI --> Admin Configuration --> Domains(select the domain you created) --> User Profiles(default user) --> Launch --> Studio --> Deployments --> Projects --> Create Project --> Organisation templates --> MLOps with GitHub Action template for real-time deployment (Your template must appear here) --> Next 
+
+Now we need to configure few more credentials to allow SageMaker to create repositories on your GitHub repo, so  we need to configure GitHub Tokens
+
+GitHub Username Menu --> Settings --> Developper Settings --> Personnal Access Token --> Token(classic) --> Generate new token(classic) --> Note(mlops-sagemaker-may-25) --> Expiration --> Select scopes("repo", "workflow", "delete_repo") --> Generate token --> copy and save the token 
+GitHub Token
+******BjXHqXPMV9zBSTn3Qng1WwDene6Ikt******
+
+
+Now Back to Sagemaker studio
+Search Bar --> SageMaker AI --> Admin Configuration --> Domains(select the domain you created) --> User Profiles(default user) --> Launch --> Studio --> Deployments --> Projects --> Create Project --> Organisation templates --> MLOps with GitHub Action template for real-time deployment (Your template must appear here) --> Next --> Project details --> Name(mlops-sagemaker-may-25) --> GithubUserName(temajozias) --> GithubAccessToken(******BjXHqXPMV9zBSTn3Qng1WwDene6Ikt******) --> Create
+
+
+Now we go back to our GitHub repo to see if the repos "mlops-sagemaker-may-25-build" and "mlops-sagemaker-may-25-deploy" have been created
+GitHub Username Menu --> Your Repositories --> you should see 2 repos("mlops-sagemaker-may-25-build" and "mlops-sagemaker-may-25-deploy") 
+
+the content of "seed_code/build_app" is inside "mlops-sagemaker-may-25-build"
+the content of "seed_code/deploy_app" is inside "mlops-sagemaker-may-25-deploy"
+
+Now you enter the repo named "mlops-sagemaker-may-25-build"
+"mlops-sagemaker-may-25-build" --> Actions --> Your Model build Pipeline is running
+
+Now bact to sagemaker studio --> SageMaker Studio --> Projects --> mlops-sagemaker-may-25 --> Pipelines --> click on the pipeline --> check the execution status of the Pipeline --> lick on the execution --> there are graphs describing the steps.
+
+Projects --> mlops-sagemaker-may-25 --> Model groups --> there is a model group created after training the model --> enter the model group --> There is the first version of your model --> enter it to see details and approve the model for deployment
+
+Once you approve, the model starts to be deployed due to a trigered model deployment pipeline
+
+
+Go back to GitHub, the repo "mlops-sagemaker-may-25-deploy" --> Actions --> The Pipeline for Model deployment is executiong.
+
+to check the status of the model being depolyed
+SageMaker domain Studio --> Deployments --> Endpoints --> There is an endpoint being created.
+
+To test the endpoint, go to test inference
+
+text/libsvm
+
+ 9.0 2:-0.1581639832819342 3:-0.18020374283281237 4:-0.22754502585380668 5:-0.31558758483463023 6:-0.19315215043463071 7:-0.3612518271019884 8:-0.4334549241447536 9:1.0
+
+Trigering a SageMaker Pipeline
+    Trigger a SageMaker Pipeline using EventBridge
+        Creating Schedule Rules on EventBridge(CRON Expression)
+        Creating a Data Rule on EventBridge
+
+Pipelines Schedules in relation with EventBridge are in the Pipeline section of the SageMaker Studio
+
+or 
+
+Search Bar --> Amazon EventBridge --> (Left Side Panel) Scheduler --> Schedules --> Create Schedule --> Schedule name(mlops-may25) --> Schedule Pattern(Recurring schedule) --> Schedule type(Rate-based schedule) --> Rate expression(10 minutes) --> Flexible time window(10 minutes) --> TimeFrame(optional) --> Next --> Select Target --> Templated targets --> SageMaker --> SageMaker Pipelines --> Select the corresponding Pipeline ARN --> Next --> Settings -Optional (Use defaults) --> Next --> Review and create schedule --> create schedule
+
+Now you can delete your scheduler
+Amazon EventBridge --> (Left Side Panel) Scheduler --> Schedules --> Create Schedule --> Schedule name(mlops-may25) --> Delete --> Delete
+
+Let's say tomorrow you want to work on your own use case, how to change and adapt your Pipeline (MLOps Specialisation course Day 16 at 01h35min)
+
+Option1
+mlops-cdk-github-action
+seed code
+
+Option2
+mlops-sagemaker-may25-build
+mlops-sagemaker-may25-deploy
+
+edit pipeline.py in mlops-sagemaker-may25-build.ml_pipelines.training
+
+
+Too enable auto scaling, go to Endpoints in your studio --> Select a model endpoint --> Auto-scaling --> AllTraffic --> Enable (Value(the maximum cpu utilization value above which, sagemaker triggers the launch of another instance to load the traffic))
+
+
+Now we are going to delete the ressources we just created to avoid bills
+
+Now bact to sagemaker studio --> SageMaker Studio --> Projects --> (select) mlops-sagemaker-may-25 --> 3 dots right side --> Delete Project --> Delete.
+
+Now CloudFormation --> Stacks
+    --> Delete "dev-MLOpsServiceCatalog"
+    --> Delete "dev-mlops-sagemaker-may-25-p-dzmzyskkeozw"
+
+Noe we delete Endpoints
+
+SageMakerAI --> Inference --> Endpoints --> Delete the Endpoints -->
+
+Now we delete ecr containers
+ECR --> Private Repository --> Repositories --> cdk- --> Delete --> Delete
+
+Now we delete the S3 buckets
+S3 --> 
+
+### Module 9- Azure MLOps - Azure Pipelines Hands-on
+
+repo to work with
+https://github.com/03sarath/mlops-v2-ado-demo.git
+
