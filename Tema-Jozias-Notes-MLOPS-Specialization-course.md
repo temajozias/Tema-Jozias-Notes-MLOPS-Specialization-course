@@ -808,7 +808,7 @@ aws cloudformation delete-stack --stack-name CDKToolkit
 where to see the logs
 CloudWatch --> Logs --> Log groups --> search bar(sagemaker) --> Filter by event time 
 
-### Module 8- Feature Store - Feast Hands-on
+### Module 8- Feature Store - Feast Part 1 Hands-on
 Docker Desktop --> 
 
 Feast Setup
@@ -1036,6 +1036,354 @@ S3 -->
 
 ### Module 9- Azure MLOps - Azure Pipelines Hands-on
 
-repo to work with
+repo to work with, to fork
 https://github.com/03sarath/mlops-v2-ado-demo.git
 
+Azure MLOps v2 Python SDK (MLFlow tracking server with no UI (SDK))
+
+we will have 3 pipelines
+
+
+Step 1: Connection between Azure DevOps and Azure Cloud
+
+You must edit this code snippet with your own details
+```
+projectName="<your project name>"
+roleName="Contributor"
+subscriptionId="<subscription Id>"
+environment="<Dev|Prod>" #First letter should be capitalized
+servicePrincipalName="Azure-ARM-${environment}-${projectName}"
+# Verify the ID of the active subscription
+echo "Using subscription ID $subscriptionID"
+echo "Creating SP for RBAC with name $servicePrincipalName, with role $roleName and in scopes     /subscriptions/$subscriptionId"
+az ad sp create-for-rbac --name $servicePrincipalName --role $roleName --scopes /subscriptions/$subscriptionId
+echo "Please ensure that the information created here is properly save for future use."
+```
+Subscription ID : a4e45119-38b2-4358-a741-057df1780756
+Subcription name : Azure subscription 1
+we should have something like this.
+```
+projectName="mlops-azureml-may25-tema"
+roleName="Contributor"
+subscriptionId="a4e45119-38b2-4358-a741-057df1780756"
+environment="Prod" #First letter should be capitalized
+servicePrincipalName="Azure-ARM-${environment}-${projectName}"
+# Verify the ID of the active subscription
+echo "Using subscription ID $subscriptionID"
+echo "Creating SP for RBAC with name $servicePrincipalName, with role $roleName and in scopes     /subscriptions/$subscriptionId"
+az ad sp create-for-rbac --name $servicePrincipalName --role $roleName --scopes /subscriptions/$subscriptionId
+echo "Please ensure that the information created here is properly save for future use."
+```
+Now we run the above script into Azure Cloud Shell
+
+Right side pannel, next to Copilot --> Cloud Shell --> Bash --> No Storage account required --> Subscription(Azure Subscription 1) --> Apply --> Copy and Paste the above mentionned code --> copy and save the Shell Output
+```
+{
+  "appId": "*************************",
+  "displayName": "Azure-ARM-Prod-mlops-azureml-may25-tema",
+  "password": "**************************************",
+  "tenant": "*************************************"
+}
+Please ensure that the information created here is properly save for future use.
+```
+Now we go to Azure DevOps portal to create our first project.
+
+
+Azure DevOps --> New Project --> Project name(azure-mlops-may25) --> Visibility(Private) --> Create
+
+Now we need to make a connection between the project(azure-mlops-may25) in Azure DevOps and Azure Cloud 
+
+Azure DevOps project(azure-mlops-may25) --> (Left Side nav panel at bottom) --> Project Settings --> Pipelines --> Service Connections --> Create Service Connection --> Azure ressource Manager --> Identity type("App registration or managed identity (manual)") --> Credential(Secret) --> Environment(Azure Cloud) --> Scope level(Subscription) --> Subscription ID(**************************************) --> Subscription name(Azure subscription 1) --> Application (client) ID ("AppID") (************************************) --> Directory (tenant) ID ("tenant") (******************************************) --> Credential (Service Principal Key) --> Client Secret ("password") (**********************************) --> Verify --> Service connection name (Azure-ARM-Prod) --> Security --> (Check) Grant access permission to all pipelines --> Verify and Save --> You should see "Azure-ARM-Prod" in the service connections page
+
+We will use Azure Repos as our repository
+
+Azure DevOps project(azure-mlops-may25) --> Repos --> Import a Repository --> Import --> lone URL (https://github.com/temajozias/mlops-v2-ado-demo.git) --> Import 
+
+We need go and give some permissions to this repository
+
+Azure DevOps project(azure-mlops-may25) --> (Left Side nav panel at bottom) --> Project Settings --> Repos --> Repositories --> azure-mlops-may25 --> Security --> Users --> azure-mlops-may25 Build Service(temajozias) --> Contribute(Allow) --> Create branch(Allow)
+
+Now we move to the Pipeline section to allocate some permissions
+
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> 3 dots right to Create Pipeline --> Manage Security --> Users --> azure-mlops-may25 Build Service(temajozias) --> Edit build pipeline(Allow)
+
+Step 1 is complete
+
+Now we will be preparing our data to start running
+Before we start running our Pipeline in Azure DevOps, we need to configure Variables in our Azure Repos
+
+Azure DevOps project(azure-mlops-may25) --> Repos --> Open file "config-infra-prod.yml" --> Edit --> namespace(mlopsaztema) --> postfix(9448) --> location(eastus) (it is up to your organisation) --> Commit --> Comment(you can keep default) --> Commit
+
+Now it is time to run our First Pipeline
+
+--------------Step 2: Infrastructure Deployment---------------
+Now it is time to run our First Pipeline
+
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> Create Pipeline --> Where is Your code ? (Azure Repos Git) --> Select a repository (azure-mlops-may25) --> Configure your Pipeline(Existing Azure Pipeline YAML file) --> Branch(main) --> Path(/mlops/devops-pipelines/cli-ado-deploy-infra.yaml) --> Continue --> Run
+
+Now we rename our pipeline corresponding to the infrastructure deployment 
+
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> azure-mlops-may25(3 dots) --> Rename/move --> "Infra Deploy" --> Save
+
+Now we go to ressource group to see all services attached to our ressources
+
+Azure Portal --> Search Bar --> Ressource Groups --> (there is a ressource group created by our Infra deploy) "rg-mlopsaztema-9448-prod" --> mlw-mlopsaztema-9448-prod ("Azure Machine Learning workspace") --> Launch Studio --> (Left side nav panel) Manage
+
+To see the compute cluster we requested
+Launch Studio --> (Left side nav panel) Manage --> Compute --> Compute clusters
+
+Explanations
+Run: cli-ado-deploy-infra.yml
+
+Child Task:
+install-az-cli.yml --> Install Azure CLI Cloud
+install-aml-cli.yml --> Install AML CLI
+create-resource-group.yml --> Install or create a resource group
+create-workspace.yml (AML) --> Creates AML workspace
+connect-to-workspace.yml --> Config & connect for AML CLI
+create compute.yml --> Create a server to Build, train, eval & register model
+
+--------------Step 3: Build/Train/Eval/Register---------------
+Let's move to Step 3
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> Create Pipeline --> Where is Your code ? (Azure Repos Git) --> Select a repository (azure-mlops-may25) --> Configure your Pipeline(Existing Azure Pipeline YAML file) --> Branch(main) --> Path(/mlops/devops-pipelines/deploy-model-training-pipeline.yml) --> Continue --> Run
+
+Now we rename our pipeline corresponding to the model build-eval-register
+
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> azure-mlops-may25(3 dots) --> Rename/move --> "model build-prep-eval-register" --> Save
+
+Now go to your Azure Machine Learning Workspace Studio
+Machine Learning Studio (mlw-mlopsaztema-9448-prod) -->(left side nav panel) Assets --> Pipelines --> 
+
+Explanations Day 17 at 3h20min
+
+--------------Step 4: Deployment to Production----------------
+Let's move to Step 4
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> Create Pipeline --> Where is Your code ? (Azure Repos Git) --> Select a repository (azure-mlops-may25) --> Configure your Pipeline(Existing Azure Pipeline YAML file) --> Branch(main) --> Path(/mlops/devops-pipelines//mlops/devops-pipelines/deploy-online-endpoint-pipeline.yml) --> Continue --> Run
+
+Now we rename our pipeline corresponding to the model build-eval-register
+
+Azure DevOps project(azure-mlops-may25) --> Pipelines --> azure-mlops-may25(3 dots) --> Rename/move --> "Deploy to Online Endpoint" --> Save
+
+```
+{"code":"SubscriptionNotRegistered","message":"Resource provider [N/A] isn't registered with Subscription [N/A]. Please see troubleshooting guide, available here: https://aka.ms/register-resource-provider","details":[],"additionalInfo":[]}
+```
+Solution on this link
+https://learn.microsoft.com/en-sg/answers/questions/2068819/machine-learning-online-endpoint-conflicts-error
+
+Microsoft.Cdn
+Microsoft.PolicyInsights
+
+Go to Azure Portal -> Select your Subscription -> Select Settings -> Select Resource Providers
+
+Make sure you add Microsoft.PolicyInsights and Microsoft.Cdn policies. Refresh and retry deployment.
+
+
+To Schedule a trining Job, enter a the job and there is an Option "Schedule"
+
+To delete ressources, 
+Azure Portal --> Search Bar --> Ressources Groups --> rg-mlopsaztema-9448-prod --> Delete ressource group --> Enter the ressource group name to confirm deletion --> rg-mlopsaztema-9448-prod --> Delete --> Delete
+
+
+### Module 8- Feature Store - Feast Part 2 Hands-on
+
+MLOps Day 18 at 2h40min to the end
+
+Run the Ubuntu machine
+
+docker start [container-id]
+docker start 47b0fdbdd170b75fd415e69f76e0116e8eed245ba9b60156876fcc00686e0eaa
+
+We log into the Ubuntu console
+docker exec -it [container-id] /bin/bash
+docker exec -it 47b0fdbdd170b75fd415e69f76e0116e8eed245ba9b60156876fcc00686e0eaa /bin/bash
+
+Now you are into your Ubuntu console
+
+We check the existance of installed libraries
+git --version
+python3 --version
+pip3 --version
+
+Now we create a virtual environment and we activate it
+python3 -m venv myvenv
+source myvenv/bin/activate
+
+Now we install feat in our environment
+pip3 install feast
+
+Feast is a programmatic feature store, not a no code feature store
+
+We start by creating a simple project on feast
+feast init my_tema_project
+
+Then you list the folders to confirm the project creation
+ls
+
+then we enter the project
+cd my_tema_project
+ls
+
+cd feature_repo
+
+all datasets are in the folder
+cd data
+
+Now back to the root of your feast project
+cd /my_tema_project/feature_repo
+
+We now create a feature store
+feast apply
+
+back to the root directory
+cd ..
+cd ..
+
+Now you clone the repository
+git clone https://github.com/03sarath/feast-store-local.git
+ls
+
+we will move all the .py files of feast-store-local repo inside feature_repo (/my_tema_project/feature_repo) of our project
+
+cd feast-store-local
+ls
+
+mv [files to move] [path]
+mv gen_train_data.py  get_data_inference.py  inspect_data.py /my_tema_project/feature_repo
+ls
+cd ..
+cd /my_tema_project/feature_repo
+ls
+
+now let's understand the data using inspect_data.py
+python inspect_data.py
+
+Now that we have already created a feature store, let's try to fetch data for our model training (offline feature store) how to invoke an offline feature store ?
+python gen_train_data.py 
+
+```
+----- Feature schema -----
+
+<class 'pandas.core.frame.DataFrame'>
+RangeIndex: 3 entries, 0 to 2
+Data columns (total 10 columns):
+ #   Column                              Non-Null Count  Dtype
+---  ------                              --------------  -----
+ 0   driver_id                           3 non-null      int64
+ 1   event_timestamp                     3 non-null      datetime64[ns, UTC]
+ 2   label_driver_reported_satisfaction  3 non-null      int64
+ 3   val_to_add                          3 non-null      int64
+ 4   val_to_add_2                        3 non-null      int64
+ 5   conv_rate                           3 non-null      float32
+ 6   acc_rate                            3 non-null      float32
+ 7   avg_daily_trips                     3 non-null      int32
+ 8   conv_rate_plus_val1                 3 non-null      float64
+ 9   conv_rate_plus_val2                 3 non-null      float64
+dtypes: datetime64[ns, UTC](1), float32(2), float64(2), int32(1), int64(4)
+memory usage: 336.0 bytes
+None
+
+----- Example features -----
+
+   driver_id           event_timestamp  ...  conv_rate_plus_val1  conv_rate_plus_val2
+0       1001 2021-04-12 10:59:42+00:00  ...             1.219632            10.219632
+1       1002 2021-04-12 08:12:10+00:00  ...             2.676280            20.676280
+2       1003 2021-04-12 16:40:26+00:00  ...             3.315079            30.315079
+
+[3 rows x 10 columns]
+(myvenv) root@47b0fdbdd170:/my_tema_project/feature_repo#
+```
+
+we just learned how to extract data from our offline feature store.
+Now we will get the data for invoking a model (online feature store)
+python get_data_inference.py
+```
+{'acc_rate': [None, None],
+ 'avg_daily_trips': [None, None],
+ 'conv_rate': [None, None],
+ 'driver_id': [1004, 1005]}
+```
+we are getting no response because there is no data in the table, we are needed to load a data to the online table. We will load data from the current hour to the online feature store
+
+CURRENT_TIME=$(date -u +"%Y-%m-%dT%H:%M:%S")
+
+feast materialize-incremental $CURRENT_TIME
+```
+Materializing 2 feature views to 2025-06-04 02:56:33+00:00 into the sqlite online store.
+
+driver_hourly_stats_fresh from 2025-06-03 02:56:49+00:00 to 2025-06-04 02:56:33+00:00:
+0it [00:00, ?it/s]
+driver_hourly_stats from 2025-06-03 02:56:49+00:00 to 2025-06-04 02:56:33+00:00:
+0it [00:00, ?it/s]
+(myvenv) root@47b0fdbdd170:/my_tema_project/feature_repo#
+```
+
+Now we have a data in out sql database, we can now get the data to invoke a model
+python get_data_inference.py
+```
+{'acc_rate': [0.15498384833335876, 0.7225118279457092],
+ 'avg_daily_trips': [371, 605],
+ 'conv_rate': [0.015781890600919724, 0.5051556825637817],
+ 'driver_id': [1004, 1005]}
+(myvenv) root@47b0fdbdd170:/my_tema_project/feature_repo#
+```
+
+### Module 9:  GCP MLOps - Module 10: Kubeflow Stack and ML Pipeline development Hands-on
+MLOps Day 19 
+
+Git repo https://github.com/temajozias/Kubeflow-pipelines-mlops/tree/main/kubeflow-steup-Local-Minikube
+
+run one command at a time with Git Bash
+
+export PIPELINE_VERSION=2.2.0
+kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=$PIPELINE_VERSION"
+
+kubectl wait --for condition=established --timeout=60s crd/applications.app.k8s.io
+kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic?ref=$PIPELINE_VERSION"
+
+
+
+kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/cluster-scoped-resources?ref=2.2.0"
+kubectl wait --for condition=established --timeout=60s crd/applications.app.k8s.io
+kubectl apply -k "github.com/kubeflow/pipelines/manifests/kustomize/env/platform-agnostic?ref=2.2.0"
+
+Now head to console.cloud.google.com
+
+gcp --> New Project --> mlops-gcp-may-tema --> Create Project --> Select Project --> 
+
+Search Bar --> Vertex AI --> Dashboad --> Get started with Vertex AI --> Enable all recommended API
+
+KubeFlow Components
+Logical components that make up kubeflow
+- Central Dashboard
+- Kubeflow Notebooks
+- Kubeflow Pipelines
+- Katib
+- Training Operators
+- Multi-Tenancy
+
+KubeFlow features
+- Notebooks
+- Model Training: Fairing (Takes a training notebook, tranforms it a docker image and runs it as a job in kubernetes)
+- Model Serving (KServe)
+- Pipelines
+
+repo with source code https://github.com/temajozias/vertex-ai-mlops-kfp2
+
+colab file https://colab.research.google.com/drive/1hPv3KFI7dmmLnRHI9A2i5VXbsTwf20mt
+
+how to run the piline file file manually in VertexAI (ml_winequality.yaml)
+VertexAI --> Pipelines --> Create Run --> Upload file --> ml_winequality.yaml --> Run Schedule(One-off/Recurring) --> Continue --> Submit
+
+If you run the Pipeline programmatically, got to
+VertexAI --> Pipelines\
+
+https://www.google.com/url?sa=D&q=http%3A%2F%2Faiplatform.googleapis.com%2F
+
+custom_model_training_cpus
+
+LOCATION
+http://aiplatform.googleapis.com/custom_model_training_cpus
+
+com.google.cloud.ai.platform.common.errors.AiPlatformException: code=RESOURCE_EXHAUSTED, message=The following quota metrics exceed quota limits: aiplatform.googleapis.com/custom_model_training_cpus, cause=null; Failed to handle the pipeline task. Task: Project number: 301136090151, Job id: 5421710665700081664, Task id: -5257138479673901056, Task name: get-wine-data, Task state: DRIVER_SUCCEEDED, Execution name: projects/301136090151/locations/us-central1/metadataStores/default/executions/14583053097397103741
+
+I am from the business sales team. As the project is for a university and for the education sector, I have to point you to the education sales team. You can fill this form and team will contact you to help https://support.google.com/code/contact/project_quota_increase
