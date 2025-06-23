@@ -1394,3 +1394,6 @@ http://aiplatform.googleapis.com/custom_model_training_cpus
 com.google.cloud.ai.platform.common.errors.AiPlatformException: code=RESOURCE_EXHAUSTED, message=The following quota metrics exceed quota limits: aiplatform.googleapis.com/custom_model_training_cpus, cause=null; Failed to handle the pipeline task. Task: Project number: 301136090151, Job id: 5421710665700081664, Task id: -5257138479673901056, Task name: get-wine-data, Task state: DRIVER_SUCCEEDED, Execution name: projects/301136090151/locations/us-central1/metadataStores/default/executions/14583053097397103741
 
 I am from the business sales team. As the project is for a university and for the education sector, I have to point you to the education sales team. You can fill this form and team will contact you to help https://support.google.com/code/contact/project_quota_increase
+
+
+git add . ; git commit -m 'adding code for kubeflow pipelines' ; git push origin main
